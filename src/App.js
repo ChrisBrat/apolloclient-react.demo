@@ -1,15 +1,88 @@
 import React, { useState } from "react";
 
 // Import everything needed to use the `useQuery` hook
-import { ApolloClient, InMemoryCache, ApolloProvider, gql, useQuery } from '@apollo/client';
+import { ApolloClient, InMemoryCache, ApolloProvider, gql, useQuery, HttpLink } from '@apollo/client';
 
-
-const client = new ApolloClient({
-  uri: "https://71z1g.sse.codesandbox.io/",
+//https://medium.com/dutchak/managing-multiple-graphql-endpoints-in-a-single-application-9dbdc4a804a5
+const createApolloClient = (uri) => new ApolloClient({
+  link: new HttpLink({ uri }),
   cache: new InMemoryCache(),
 });
 
 
+// Multiple apollo clients
+const dogClient = createApolloClient('https://71z1g.sse.codesandbox.io/');
+const localhostClient = createApolloClient('http://localhost:5000');
+
+
+export default function App() {
+
+  const [selectedDog, setSelectedDog] = useState(null);
+
+  function onDogSelected({ target }) {
+    setSelectedDog(target.value);
+  }
+  return (
+    <div>
+      <ApolloProvider client={localhostClient}>
+        <div>
+          <h2>Libraries</h2>        
+          <Libraries />
+        </div>
+      </ApolloProvider>
+      <ApolloProvider client={dogClient}>
+      <div>
+        <h2>Building Query components 🚀</h2>
+        {selectedDog && <DogPhoto breed={selectedDog} />}
+        <Dogs onDogSelected={onDogSelected} />
+      </div>
+    </ApolloProvider>
+  </div>
+  );
+}
+
+// Libraries components and functions
+const GET_LIBRARIES = gql`
+  query libraries {
+    libraries {
+      branch, 
+      books { 
+        title, 
+        author {
+          name
+        }
+      }
+    }
+  }
+`;
+
+function Libraries() {
+  const { loading, error, data } = useQuery(GET_LIBRARIES);
+
+  if (loading) return 'Loading...';
+  if (error) return `Error! ${error.message}`;
+
+  return ( 
+      <div>
+        Libraries :   
+        <ul>
+        {data.libraries.map((LibraryItem) => (
+          <li>{LibraryItem.branch}
+            <ul>
+            {LibraryItem.books.map((bookItem) => (
+              <li>{bookItem.title}</li>
+            ))}
+            </ul>
+          </li>
+        ))}
+
+      </ul>
+    </div> 
+  );
+}
+
+
+// Dog components and functions
 const GET_DOGS = gql`
   query GetDogs {
     dogs {
@@ -28,52 +101,6 @@ const GET_DOG_PHOTO = gql`
   }
 `;
 
-export default function App() {
-  const [selectedDog, setSelectedDog] = useState(null);
-
-  function onDogSelected({ target }) {
-    setSelectedDog(target.value);
-  }
-
-  return (
-    <ApolloProvider client={client}>
-      <div>
-        <h2>Building Query components 🚀</h2>
-        {selectedDog && <DogPhoto breed={selectedDog} />}
-        <Dogs onDogSelected={onDogSelected} />
-      </div>
-    </ApolloProvider>
-  );
-}
-
-const GET_LOCATIONS = gql`
-  query GetLocations {
-    locations {
-      id
-      name
-      description
-      photo
-    }
-  }
-`;
-
-function DisplayLocations() {
-  const { loading, error, data } = useQuery(GET_LOCATIONS);
-
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error : {error.message}</p>;
-
-  return data.locations.map(({ id, name, description, photo }) => (
-    <div key={id}>
-      <h3>{name}</h3>
-      <img width="400" height="250" alt="location-reference" src={`${photo}`} />
-      <br />
-      <b>About this location:</b>
-      <p>{description}</p>
-      <br />
-    </div>
-  ));
-}
 
 function Dogs({ onDogSelected }) {
   const { loading, error, data } = useQuery(GET_DOGS);

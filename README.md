@@ -1,5 +1,8 @@
 # apolloclient-react.demo
-Demo of a Apollo client using React
+Demo of a Apollo client using React.
+
+Solution to implement multiple Apollo clients provided by Roman Dutchak (https://medium.com/@dutchakdev)
+* https://medium.com/dutchak/managing-multiple-graphql-endpoints-in-a-single-application-9dbdc4a804a5
 
 # Getting Started with Create React App
 
